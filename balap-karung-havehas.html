@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Balap Karung Digital – Have / Has</title>
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(#e6f7ff,#eafff0);
+}
+.container{
+  display:grid;
+  grid-template-columns:300px 1fr 300px;
+  gap:16px;
+  height:100vh;
+  padding:12px;
+  box-sizing:border-box;
+}
+.panel{
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.qbox{
+  background:#2563eb;
+  color:white;
+  padding:12px;
+  border-radius:10px;
+  min-height:110px;
+  font-size:18px;
+  font-weight:bold;
+  text-align:center;
+}
+.opts{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.opts button{
+  font-size:22px;
+  padding:14px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+}
+.opts button:active{background:#bfdbfe}
+.posbar{
+  margin-top:12px;
+  font-weight:bold;
+  text-align:center;
+}
+.arena{
+  position:relative;
+  background:#bbf7d0;
+  border-radius:14px;
+  overflow:hidden;
+}
+.track{
+  position:absolute;
+  left:140px;
+  right:140px;
+  top:50%;
+  height:6px;
+  background:white;
+  transform:translateY(-50%);
+}
+.finish{
+  position:absolute;
+  right:10px;
+  top:10px;
+  bottom:10px;
+  width:80px;
+  background:repeating-linear-gradient(
+    180deg,
+    white 0 20px,
+    red 20px 40px
+  );
+}
+.player{
+  position:absolute;
+  left:20px;
+  transition:left .4s ease;
+  text-align:center;
+}
+.player img{width:90px}
+.player.left{top:35%}
+.player.right{top:65%}
+
+/* 🎆 FIREWORK */
+.firework{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-size:48px;
+  font-weight:bold;
+  animation:pop .6s ease;
+  z-index:999;
+}
+@keyframes pop{
+  from{transform:scale(.5);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+.spark{
+  position:absolute;
+  width:8px;
+  height:8px;
+  background:yellow;
+  border-radius:50%;
+  animation:spark 1s linear infinite;
+}
+@keyframes spark{
+  from{transform:translate(0,0);opacity:1}
+  to{transform:translate(var(--x),var(--y));opacity:0}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- TEAM A -->
+<div class="panel">
+  <div>
+    <div class="qbox" id="q-left"></div>
+    <div class="opts" id="opts-left"></div>
+  </div>
+  <div class="posbar">Step: <span id="pos-left">0</span> / 16</div>
+</div>
+
+<!-- ARENA -->
+<div class="arena" id="arena">
+  <div class="track"></div>
+  <div class="finish"></div>
+
+  <div class="player left" id="player-left">
+    <img src="https://iili.io/KmyOGhg.png">
+    <div>TEAM A</div>
+  </div>
+
+  <div class="player right" id="player-right">
+    <img src="https://iili.io/KmyOETF.png">
+    <div>TEAM B</div>
+  </div>
+</div>
+
+<!-- TEAM B -->
+<div class="panel">
+  <div>
+    <div class="qbox" id="q-right"></div>
+    <div class="opts" id="opts-right"></div>
+  </div>
+  <div class="posbar">Step: <span id="pos-right">0</span> / 16</div>
+</div>
+
+</div>
+
+<script>
+const questions = [
+ {q:"The rabbit ___ long ears.",a:"has"},
+ {q:"I ___ two brothers.",a:"have"},
+ {q:"She ___ a red bag.",a:"has"},
+ {q:"They ___ a big house.",a:"have"},
+ {q:"My father ___ a car.",a:"has"},
+ {q:"We ___ an English class today.",a:"have"},
+ {q:"The turtle ___ a hard shell.",a:"has"},
+ {q:"You ___ many friends.",a:"have"},
+ {q:"Andi ___ a new bicycle.",a:"has"},
+ {q:"The students ___ books.",a:"have"},
+ {q:"My sister ___ a doll.",a:"has"},
+ {q:"Cats ___ sharp claws.",a:"have"},
+ {q:"He ___ a blue hat.",a:"has"},
+ {q:"We ___ homework today.",a:"have"},
+ {q:"The boy ___ a pet rabbit.",a:"has"},
+ {q:"I ___ an idea.",a:"have"}
+];
+
+let index=0,leftStep=0,rightStep=0,gameOver=false;
+
+function render(){
+  document.getElementById("q-left").innerText=questions[index].q;
+  document.getElementById("q-right").innerText=questions[index].q;
+  makeButtons("left");
+  makeButtons("right");
+}
+
+function makeButtons(side){
+  const box=document.getElementById("opts-"+side);
+  box.innerHTML="";
+  ["has","have"].forEach(v=>{
+    const b=document.createElement("button");
+    b.innerText=v.toUpperCase();
+    b.onclick=()=>answer(side,v);
+    box.appendChild(b);
+  });
+}
+
+function answer(side,val){
+  if(gameOver) return;
+
+  if(val===questions[index].a){
+    if(side==="left"){ leftStep++; move("left",leftStep); pos("left",leftStep); }
+    else{ rightStep++; move("right",rightStep); pos("right",rightStep); }
+
+    if(leftStep===16) win("TEAM A");
+    if(rightStep===16) win("TEAM B");
+
+    index++;
+    if(index<questions.length) render();
+  }
+}
+
+function pos(side,val){
+  document.getElementById("pos-"+side).innerText=val;
+}
+
+function move(side,step){
+  const arena=document.getElementById("arena");
+  const max=arena.offsetWidth-220;
+  document.getElementById("player-"+side).style.left=
+    (20+(step/16)*max)+"px";
+}
+
+function win(team){
+  gameOver=true;
+  const fw=document.createElement("div");
+  fw.className="firework";
+  fw.innerHTML=`🎆 ${team} MENANG! 🎆`;
+  for(let i=0;i<40;i++){
+    const s=document.createElement("div");
+    s.className="spark";
+    s.style.setProperty("--x",Math.random()*600-300+"px");
+    s.style.setProperty("--y",Math.random()*400-200+"px");
+    fw.appendChild(s);
+  }
+  document.body.appendChild(fw);
+}
+
+render();
+</script>
+
+</body>
+</html>
